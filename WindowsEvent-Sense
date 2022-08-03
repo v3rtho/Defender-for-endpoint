@@ -1,0 +1,4 @@
+#wevtutil query-events "Microsoft-Windows-SENSE/Operational" /count:20 /rd:true /format:text /q:"Event[System[(EventID=41)]]"
+
+wevtutil query-events "Microsoft-Windows-SENSE/Operational" /count:20 /rd:true /format:text /q:"Event[System[(EventID=41)]]"
+
