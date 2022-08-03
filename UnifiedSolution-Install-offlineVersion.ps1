@@ -1,4 +1,8 @@
 <#
+.HISTORY
+    ThomasV: Removed download of KB's and created local folder check if KB's exists. Windows6.1-KB3080149-x64.msu & 	Windows8.1-KB2999226-x64.msu
+    		need to be in the same folder as Install.ps1 file
+    ThomasV: Remove download of UpdatePlatform.exe. File needs to be in the same folder as Install.ps1 file		
 .SYNOPSIS
     Helper script for installing/uninstalling Microsoft Defender for Downlevel Servers.
 .DESCRIPTION
