@@ -1,0 +1,2 @@
+DeviceTvmSecureConfigurationAssessment 
+| where ConfigurationId == 'scid-25'  and  IsApplicable == '1' 
