@@ -1,0 +1,49 @@
+# Define the name of the product to uninstall
+$productName = "Symantec Endpoint Protection"
+Create an array to store uninstall results
+$results = @()
+Get list of computer names (you can modify this to get the list from a file or another source)
+$computerNames = @("Computer1", "Computer2", "Computer3")
+foreach ($computerName in $computerNames) { # Get Symantec Endpoint Protection package(s) on the current computer $sepPackages = Get-Package -Name $productName -ComputerName $computerName -ErrorAction SilentlyContinue
+if ($sepPackages) {
+    # Uninstall Symantec Endpoint Protection on the current computer
+    foreach ($sepPackage in $sepPackages) {
+        $uninstallResult = $sepPackage | Uninstall-Package -Force
+
+        if ($uninstallResult) {
+            $result = @{
+                ComputerName = $computerName
+                ProductName = $productName
+                Result = "Successfully uninstalled"
+            }
+        } else {
+            $errorCode = $LASTEXITCODE
+
+            if ($errorCode -eq 3010) {
+                $result = @{
+                    ComputerName = $computerName
+                    ProductName = $productName
+                    Result = "Uninstallation completed with exit code 3010 (Reboot required)"
+                }
+            } else {
+                $result = @{
+                    ComputerName = $computerName
+                    ProductName = $productName
+                    Result = "Failed to uninstall with exit code $errorCode"
+                }
+            }
+        }
+        $results += New-Object PSObject -Property $result
+    }
+} else {
+    $result = @{
+        ComputerName = $computerName
+        ProductName = $productName
+        Result = "$productName not found"
+    }
+    $results += New-Object PSObject -Property $result
+}
+}
+Output results to a CSV file
+$results | Export-Csv -Path "UninstallResults.csv" -NoTypeInformation
+Write-Host "Uninstall results have been saved to UninstallResults.csv"
