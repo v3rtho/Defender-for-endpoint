@@ -1,0 +1,6 @@
+DeviceTvmSecureConfigurationAssessment 
+| where ConfigurationId == 'scid-2071'  and  IsCompliant == '1' 
+
+//scid-2071 public
+//scid-2072 domain
+//scid-2073 private
