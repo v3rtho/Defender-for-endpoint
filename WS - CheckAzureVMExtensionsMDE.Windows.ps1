@@ -1,4 +1,5 @@
-﻿Connect-AzAccount
+# Created by Thomas Verheyden 
+ Connect-AzAccount
 
 
 $ALLVMs = Get-AzVM
