@@ -34,7 +34,7 @@ write-host -ForegroundColor Green Windows Defender + GUI installed
 }}
 
 
-<#
+
 ## Only working on windows server 2016
 ## Check if defender AV isn't disabled via registery
 try{
@@ -48,13 +48,12 @@ if($val.DisableAntiSpyware -eq "1")
 }Else {  write-host -ForegroundColor Green 'Windows Defender DisableAntispyware not found: OK'}
 
 ## Set passive mode
-
 ##HKLM\SOFTWARE\Policies\Microsoft\Windows Advanced Threat Protection
 ##dword: ForceDefenderPassiveMode = 1
 
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Advanced Threat Protection" -Name "ForceDefenderPassiveMode" -Value 1
 write-host -ForegroundColor Green 'Windows Defender in passive mode active: OK'
-#>
+
 
 $imageName = (Get-ItemPropertyValue -Path:'HKLM:\SYSTEM\CurrentControlSet\Services\WinDefend' -Name:ImagePath) -replace '"', ''
 $currentVersion = Get-FileVersion -File:$imageName
