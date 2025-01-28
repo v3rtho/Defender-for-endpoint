@@ -1,0 +1,39 @@
+cat >  /etc/opt/microsoft/mdatp/managed/mdatp_managed.json << EOF
+{
+   "antivirusEngine":{
+   "enforcementLevel":"real_time",
+	"behaviorMonitoring":"enabled",
+	"scanAfterDefinitionUpdate":true,
+   "scanArchives":true,
+	"maximumOnDemandScanThreads":2,
+   "exclusionsMergePolicy":"admin_only",
+	"exclusions":[
+         {
+            "\$type":"excludedPath",
+            "isDirectory":false,
+            "path":"/var/log/system.log"
+         }     
+      ],	
+         "disallowedThreatActions":[
+         "allow",
+         "restore"
+      ], 
+      "threatTypeSettings":[
+         {
+            "key":"potentially_unwanted_application",
+            "value":"block"
+         },
+         {
+            "key":"archive_bomb",
+            "value":"audit"
+         }
+      ]
+   },
+   "cloudService":{
+   "automaticDefinitionUpdateEnabled":true,
+	"diagnosticLevel":"optional",
+   "automaticSampleSubmissionConsent":"all",
+   "enabled":true      
+   }
+}
+EOF
