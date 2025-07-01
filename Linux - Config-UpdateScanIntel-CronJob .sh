@@ -1,5 +1,5 @@
 #!/bin/bash
-# Created by Thomas Verheyden - 27-08-2024
+# Created by Thomas Verheyden - 01-07-2025
 
 # Verify we are running as root
 if [ "$EUID" -ne 0 ]; then
