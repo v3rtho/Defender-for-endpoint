@@ -1,0 +1,25 @@
+let DeviceNotOnbaorded = DeviceTvmSecureConfigurationAssessment 
+| where ConfigurationId == "scid-20000" and IsCompliant == "0"
+| project DeviceId;
+let DeviceNotOnbaordedInDomain = DeviceInfo
+| where DeviceId in (DeviceNotOnbaorded)
+| where JoinType == "Domain Joined"
+| project DeviceId, DeviceName, JoinType;
+DeviceNetworkInfo
+| where DeviceId in (DeviceNotOnbaordedInDomain)
+| where ConnectedNetworks  != ""
+| where IPAddresses matches regex @"172\.19\." or  IPAddresses matches regex @"172\.18\."
+| extend ConnectedNetworksExp = parse_json(ConnectedNetworks)
+| mv-expand bagexpansion = array ConnectedNetworks=ConnectedNetworksExp
+| extend NetworkName = tostring(ConnectedNetworks ["Name"]), Description = tostring(ConnectedNetworks ["Description"])
+//| where NetworkName == "<your network name here>"
+//| where NetworkCategory == "Private"
+| summarize arg_max(Timestamp, *) by DeviceId
+
+
+
+
+
+
+
+
