@@ -1,0 +1,90 @@
+DeviceTvmSoftwareVulnerabilities 
+| join kind=leftouter (DeviceTvmSoftwareEvidenceBeta 
+| extend TVM_EvidenceLastSeenTime = todatetime(LastSeenTime)) on DeviceId, SoftwareName, SoftwareVendor ,SoftwareVersion 
+| project-away DeviceId1, SoftwareName1, SoftwareVendor1, SoftwareVersion1
+
+
+DeviceTvmSoftwareVulnerabilities 
+| join kind=leftouter (DeviceTvmSoftwareEvidenceBeta 
+| extend TVM_EvidenceLastSeenTime = todatetime(LastSeenTime)) on DeviceId, SoftwareName, SoftwareVendor ,SoftwareVersion 
+| project-away TVM_EvidenceLastSeenTime,DeviceId1, SoftwareName1, SoftwareVendor1, SoftwareVersion1
+
+
+
+let SoftwareInstalled = DeviceTvmSoftwareInventory
+| where SoftwareVendor contains "SOFTWAREVENDORXYZ"
+| distinct DeviceId
+| extend DeviceIdHasSoftware = DeviceId;
+DeviceInfo
+| where OSPlatform == "Windows10" and OnboardingStatus == "Onboarded"
+| summarize by DeviceId, DeviceName
+| join kind = leftouter (
+SoftwareInstalled
+) on $left.DeviceId == $right.DeviceIdHasSoftware
+| extend SoftwareInstalled = iif(tostring(DeviceIdHasSoftware) != "", 'Yes','')
+| where SoftwareInstalled != "Yes"
+| project DeviceId, DeviceName, SoftwareInstalled
+
+
+
+// Devices with Software X Installed
+
+let SoftwareXInstalled = (DeviceTvmSoftwareInventory
+
+| where SoftwareVendor has "VendorX"
+
+| extend DeviceId = toupper(DeviceId)
+
+| distinct DeviceId);
+
+Deviceinfo
+
+| where OSPlatform contains "Windows10" and OnboardingStatus == "Onboarded"
+
+| extend DeviceId = toupper(DeviceId)
+
+| where DeviceId !in(SoftwareXInstalled)
+
+| project DeviceId, DeviceName
+
+
+//Device Last Seen time
+//Built by my wonderful colleague, Andrea Fisher
+
+let info = DeviceInfo
+| project DeviceId, DeviceName, OnboardingStatus, OSPlatform, OSVersion;
+let seen = DeviceTvmSoftwareEvidenceBeta
+| project DeviceId, LastSeenTime;
+let finallist = info
+| join kind=inner (seen) on DeviceId
+| project DeviceId, LastSeenTime, DeviceName, OnboardingStatus, OSPlatform, OSVersion;
+finallist
+| project DeviceName, LastSeenTime, OnboardingStatus, OSPlatform, OSVersion
+
+//// Missing update list:
+
+DeviceTvmSoftwareVulnerabilities
+| where SoftwareVendor == 'microsoft'
+| where SoftwareName has_any ('windows_11','windows_10','Windows_Server')
+| where isnotempty(RecommendedSecurityUpdate)
+| distinct DeviceId, RecommendedSecurityUpdate, RecommendedSecurityUpdateId, SoftwareName
+| join kind=leftouter (
+    DeviceInfo
+    | where isnotempty(OSPlatform)
+    | where OnboardingStatus == 'Onboarded'
+    | where isnotempty(OSVersionInfo)
+    | summarize arg_max(Timestamp, *) by DeviceId)
+    on $left.DeviceId == $right.DeviceId
+| summarize MissingDevices = make_set(DeviceName) by SoftwareName
+| extend TotalMissingKBDevice = array_length(MissingDevices)
+| project  ['Total Exposed devices'] = TotalMissingKBDevice,  SoftwareName
+
+//// September updates:
+
+DeviceTvmSoftwareVulnerabilities | join kind=inner (DeviceTvmSoftwareVulnerabilitiesKB) on $left.CveId == $right.CveId 
+| where RecommendedSecurityUpdate contains "September 2024 Security Updates" 
+| extend URLSecurityUpdate = strcat("https://msrc.microsoft.com/update-guide/en-US/advisory/", CveId) 
+| project CveId,IsExploitAvailable,URLSecurityUpdate,CvssScore,VulnerabilitySeverityLevel,RecommendedSecurityUpdate, DeviceName, DeviceId,RecommendedSecurityUpdateId, OSPlatform, SoftwareVendor, SoftwareName, SoftwareVersion | order by CvssScore
+
+
+/// 
