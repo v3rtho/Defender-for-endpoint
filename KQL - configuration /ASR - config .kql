@@ -1,0 +1,5 @@
+DeviceTvmInfoGathering
+|where DeviceName  startswith "spr-" or DeviceName startswith "sac-" or DeviceName  startswith "sts-" or DeviceName startswith "slb-" or DeviceName startswith "sdv-"
+| extend ASR = parse_json(AdditionalFields.AsrConfigurationStates)
+| project DeviceName, LastSeenTime, OSPlatform, ASR
+| evaluate bag_unpack(ASR)
