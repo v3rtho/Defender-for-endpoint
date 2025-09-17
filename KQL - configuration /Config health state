@@ -1,0 +1,36 @@
+DeviceTvmSecureConfigurationAssessment
+|where DeviceName  startswith "spr-" or DeviceName startswith "sac-" or DeviceName  startswith "sts-" or DeviceName startswith "slb-" or DeviceName startswith "sdv-"
+| where ConfigurationId in ('scid-90', 'scid-91', 'scid-2003', 'scid-2010', 'scid-2011', 'scid-2012', 'scid-2013', 'scid-2016', 'scid-5095', 'scid-6095', 
+                            'scid-5090', 'scid-6090', 'scid-5091', 'scid-6091', 'scid-5094', 'scid-6094')
+| extend Test = case(
+    ConfigurationId == 'scid-2003' and OSPlatform startswith 'Windows', 'TamperProtection',
+    ConfigurationId == 'scid-2010' and OSPlatform startswith 'Windows', 'AntivirusEnabled',
+    ConfigurationId == 'scid-90'   and OSPlatform startswith 'Windows', 'EmailScanning', 
+    ConfigurationId == 'scid-2011' and OSPlatform startswith 'Windows', 'AntivirusSignatureVersion',
+    ConfigurationId == 'scid-5095' and OSPlatform == 'macOS', 'AntivirusSignatureVersion',
+    ConfigurationId == 'scid-6095' and OSPlatform == 'Linux', 'AntivirusSignatureVersion',
+    ConfigurationId == 'scid-2012' and OSPlatform startswith 'Windows','RealtimeProtection',
+    ConfigurationId == 'scid-5090' and OSPlatform == 'macOS', 'RealtimeProtection',
+    ConfigurationId == 'scid-6090' and OSPlatform == 'Linux', 'RealtimeProtection',
+    ConfigurationId == 'scid-2013' and OSPlatform startswith 'Windows', 'PUAProtection',
+    ConfigurationId == 'scid-5091' and OSPlatform == 'macOS', 'PUAProtection',
+    ConfigurationId == 'scid-6091' and OSPlatform == 'Linux', 'PUAProtection',
+    ConfigurationId == 'scid-2016' and OSPlatform startswith 'Windows', 'CloudProtection',
+    ConfigurationId == 'scid-5094' and OSPlatform == 'macOS', 'CloudProtection',
+    ConfigurationId == 'scid-6094' and OSPlatform == 'Linux', 'CloudProtection',
+    ConfigurationId == 'scid-91' and OSPlatform startswith 'Windows', 'BehaviourMonitoring',
+    'NA'),
+        Result = case(IsCompliant == 1, 'GOOD', 'BAD'),
+        SignVer = case(ConfigurationId == 'scid-2011' and OSPlatform startswith 'Windows', parse_json(Context)[0], 
+                       ConfigurationId == 'scid-5095' and OSPlatform == 'macOS', parse_json(Context)[0], 
+                       ConfigurationId == 'scid-6095' and OSPlatform == 'Linux', parse_json(Context)[0], 
+        ''),
+        DeviceName = toupper(tostring(split(DeviceName, '.')[0]))
+| extend packed = pack(Test, Result)
+| summarize Tests = make_bag(packed), SignatureData = max(SignVer), DeviceName = any(DeviceName), OSPlatform = any(OSPlatform) by DeviceId
+| evaluate bag_unpack(Tests)
+| extend AVSignatureVersion = tostring(parse_json(SignatureData)[0]), Date = todatetime(parse_json(SignatureData)[2]), ProductVersion = tostring(parse_json(SignatureData)[3]), EngineVersion = tostring(parse_json(SignatureData)[1])
+| join kind=leftouter (DeviceInfo
+| distinct DeviceId, MachineGroup, OnboardingStatus) on DeviceId
+| where OnboardingStatus == "Onboarded"
+| project-away SignatureData, NA, DeviceId1
