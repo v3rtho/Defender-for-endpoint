@@ -1,0 +1,91 @@
+DeviceNetworkInfo
+//| where Timestamp > ago(7d)
+| where ConnectedNetworks  != ""
+| extend ConnectedNetworksExp = parse_json(ConnectedNetworks)
+| mv-expand bagexpansion = array ConnectedNetworks=ConnectedNetworksExp
+| extend NetworkName = tostring(ConnectedNetworks ["Name"]), Description = tostring(ConnectedNetworks ["Description"]), NetworkCategory = tostring(ConnectedNetworks ["Category"])
+//| where NetworkName == "<your network name here>"
+| summarize arg_max(Timestamp, *) by DeviceId
+
+let DeviceNotOnbaorded = DeviceTvmSecureConfigurationAssessment 
+| where ConfigurationId == "scid-20000" and IsCompliant == "0"
+| project DeviceId;
+DeviceNetworkInfo
+| where DeviceId in (DeviceNotOnbaorded)
+| where ConnectedNetworks  != ""
+| extend ConnectedNetworksExp = parse_json(ConnectedNetworks)
+| mv-expand bagexpansion = array ConnectedNetworks=ConnectedNetworksExp
+| extend NetworkName = tostring(ConnectedNetworks ["Name"]), Description = tostring(ConnectedNetworks ["Description"]), NetworkCategory = tostring(ConnectedNetworks ["Category"])
+//| where NetworkName == "<your network name here>"
+//| where NetworkCategory == "Private"
+| summarize arg_max(Timestamp, *) by DeviceId
+
+Solve the monitored networks challenges
+
+// OPTIONAL - Device cap used to ignore network with less then X devices in them
+let device_cap = 0;
+DeviceNetworkInfo
+| where Timestamp > ago(7d)
+// Ignore empty networks
+| where ConnectedNetworks  != ""
+// Get networks data
+| extend ConnectedNetworksExp = parse_json(ConnectedNetworks)
+| mv-expand bagexpansion = array ConnectedNetworks=ConnectedNetworksExp
+| extend NetworkName = tostring(ConnectedNetworks ["Name"]), NetworkDescription = tostring(ConnectedNetworks ["Description"]), NetworkCategory = tostring(ConnectedNetworks ["Category"])
+// Get subnet data for IPv4 Addresses
+| extend IPAddressesExp = parse_json(IPAddresses)
+| mv-expand bagexpansion = array IPAddresses=IPAddressesExp
+| extend IPAddress = tostring(IPAddresses ["IPAddress"]), SubnetPrefix = tolong(IPAddresses ["SubnetPrefix"])
+| extend NetworkAddress = format_ipv4(IPAddress, SubnetPrefix)
+| extend SubnetRange = strcat(NetworkAddress, "/", SubnetPrefix)
+// Exclude IPv6 and APIPPA
+| where SubnetPrefix <= 32
+| where IPAddress !startswith "169.254"
+// Ignore unidentified networks
+| where not(NetworkName has_any ("Unidentified", "Identifying..."))
+// Provide list
+| distinct DeviceId, NetworkName, IPv4Dhcp, SubnetRange
+| summarize Devices = count(), SubnetRanges = make_set(SubnetRange) by NetworkName, IPv4Dhcp
+// Ignore network with very low device count
+| where Devices >= device_cap
+| sort by Devices desc
+
+Find by subnet range
+// OPTIONAL - Device cap used to ignore network with less then X devices in them
+let device_cap = 0;
+DeviceNetworkInfo
+| where Timestamp > ago(7d)
+// Ignore empty networks
+| where ConnectedNetworks  != ""
+// Get networks data
+| extend ConnectedNetworksExp = parse_json(ConnectedNetworks)
+| mv-expand bagexpansion = array ConnectedNetworks=ConnectedNetworksExp
+| extend NetworkName = tostring(ConnectedNetworks ["Name"]), NetworkDescription = tostring(ConnectedNetworks ["Description"]), NetworkCategory = tostring(ConnectedNetworks ["Category"])
+// Get subnet data for IPv4 Addresses
+| extend IPAddressesExp = parse_json(IPAddresses)
+| mv-expand bagexpansion = array IPAddresses=IPAddressesExp
+| extend IPAddress = tostring(IPAddresses ["IPAddress"]), SubnetPrefix = tolong(IPAddresses ["SubnetPrefix"])
+| extend NetworkAddress = format_ipv4(IPAddress, SubnetPrefix)
+| extend SubnetRange = strcat(NetworkAddress, "/", SubnetPrefix)
+// Exclude IPv6 and APIPPA
+| where SubnetPrefix <= 32
+| where IPAddress !startswith "169.254"
+// Ignore unidentified networks
+| where not(NetworkName has_any ("Unidentified", "Identifying..."))
+// Provide list
+| distinct DeviceId, NetworkName, IPv4Dhcp, SubnetRange
+| summarize Devices = count(), SubnetRanges = make_set(SubnetRange) by NetworkName, IPv4Dhcp
+// Ignore network with very low device count
+| where Devices >= device_cap
+| sort by Devices desc
+// Search specific subnet range
+| where tostring(SubnetRanges) contains "172.16.76.0/24"
+
+DeviceInfo | where OnboardingStatus != "Onboarded"
+| summarize arg_max(Timestamp, *) by DeviceId
+| where isempty(MergedToDeviceId)
+| limit 100
+| invoke SeenBy()
+| project DeviceId, DeviceName, DeviceType, SeenBy
+
+
