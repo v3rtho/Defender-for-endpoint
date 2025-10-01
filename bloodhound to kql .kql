@@ -1,0 +1,3 @@
+// Bloodhound to KQL
+
+CALL apoc.export.json.all("all_graph_aad.json", {useTypes:true, writeNodeProperties:true,writeRelationshipProperties:true})
