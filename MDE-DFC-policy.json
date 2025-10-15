@@ -1,0 +1,178 @@
+{
+  "properties": {
+    "displayName": "ARX - Deploy Microsoft Defender for Endpoint agent on Windows Azure Arc machines with tag PRD",
+    "policyType": "Custom",
+    "mode": "Indexed",
+    "description": "Deploys Microsoft Defender for Endpoint on Windows Azure Arc machines.",
+    "metadata": {
+      "category": "Security Center",
+      "createdBy": "",
+      "createdOn": "2024-07-12T06:56:06.2477108Z",
+      "updatedBy": "",
+      "updatedOn": "2025-08-21T13:22:25.4219047Z"
+    },
+    "version": "1.0.0",
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "Enable or disable the execution of the policy"
+        },
+        "allowedValues": [
+          "DeployIfNotExists",
+          "AuditIfNotExists",
+          "Disabled"
+        ],
+        "defaultValue": "DeployIfNotExists"
+      }
+    },
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.HybridCompute/machines"
+          },
+          {
+            "field": "Microsoft.HybridCompute/machines/osName",
+            "like": "windows*"
+          },
+          {
+            "field": "tags['MDFCSecurityConnector']",
+            "notEquals": "true"
+          },
+          {
+            "field": "tags['DefenderOnboarded']",
+            "Equals": "true"
+          },
+          {
+            "anyOf": [
+              {
+                "field": "Microsoft.HybridCompute/machines/osSku",
+                "contains": "2012"
+              },
+              {
+                "field": "Microsoft.HybridCompute/machines/osSku",
+                "contains": "2016"
+              },
+              {
+                "field": "Microsoft.HybridCompute/machines/osSku",
+                "contains": "2019"
+              },
+              {
+                "field": "Microsoft.HybridCompute/machines/osSku",
+                "contains": "2022"
+              },
+              {
+                "field": "Microsoft.HybridCompute/machines/osSku",
+                "contains": "2025"
+              },
+              {
+                "field": "Microsoft.HybridCompute/machines/osSku",
+                "equals": "Windows 10 Enterprise multi-session"
+              },
+              {
+                "field": "Microsoft.HybridCompute/machines/osSku",
+                "equals": "Windows 10 Enterprise for Virtual Desktops"
+              }
+            ]
+          }
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]",
+        "details": {
+          "roleDefinitionIds": [
+            "/providers/microsoft.authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"
+          ],
+          "type": "Microsoft.HybridCompute/machines/extensions",
+          "name": "MDE.Windows",
+          "existenceCondition": {
+            "allOf": [
+              {
+                "field": "Microsoft.HybridCompute/machines/extensions/publisher",
+                "equals": "Microsoft.Azure.AzureDefenderForServers"
+              },
+              {
+                "field": "Microsoft.HybridCompute/machines/extensions/type",
+                "equals": "MDE.Windows"
+              },
+              {
+                "field": "Microsoft.HybridCompute/machines/extensions/provisioningState",
+                "equals": "Succeeded"
+              }
+            ]
+          },
+          "deployment": {
+            "properties": {
+              "mode": "incremental",
+              "parameters": {
+                "vmName": {
+                  "value": "[field('name')]"
+                },
+                "location": {
+                  "value": "[field('location')]"
+                },
+                "azureResourceId": {
+                  "value": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.HybridCompute/machines/',field('name'))]"
+                }
+              },
+              "template": {
+                "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                "contentVersion": "1.0.0.0",
+                "parameters": {
+                  "vmName": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "string"
+                  },
+                  "azureResourceId": {
+                    "type": "string"
+                  }
+                },
+                "resources": [
+                  {
+                    "apiVersion": "2019-12-12",
+                    "name": "[concat(parameters('vmName'), '/MDE.Windows')]",
+                    "type": "Microsoft.HybridCompute/machines/extensions",
+                    "location": "[parameters('location')]",
+                    "properties": {
+                      "autoUpgradeMinorVersion": true,
+                      "publisher": "Microsoft.Azure.AzureDefenderForServers",
+                      "type": "MDE.Windows",
+                      "typeHandlerVersion": "1.0",
+                      "settings": {
+                        "azureResourceId": "[parameters('azureResourceId')]",
+                        "vNextEnabled": "true",
+                        "installedBy": "Policy"
+                      },
+                      "protectedSettings": {
+                        "defenderForEndpointOnboardingScript": "[reference(subscriptionResourceId('Microsoft.Security/mdeOnboardings', 'Windows'), '2021-10-01-preview', 'full').properties.onboardingPackageWindows]"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "versions": [
+      "1.0.0"
+    ]
+  },
+  "id": "/subscriptions/080a0e5d-6ba9-4f87-8cc9-a0780be178e1/providers/Microsoft.Authorization/policyDefinitions/1791fd7d-092d-495a-9beb-2517071b946d",
+  "type": "Microsoft.Authorization/policyDefinitions",
+  "name": "1791fd7d-092d-495a-9beb-2517071b946d",
+  "systemData": {
+    "createdBy": "user_fd3c3b7fe113472e9ba4f9cad5acc5fc@cronos.onmicrosoft.com",
+    "createdByType": "User",
+    "createdAt": "2024-07-12T06:56:06.1953784Z",
+    "lastModifiedBy": "geerati.csp@cronos.be",
+    "lastModifiedByType": "User",
+    "lastModifiedAt": "2025-08-21T13:22:25.3977815Z"
+  }
+}
