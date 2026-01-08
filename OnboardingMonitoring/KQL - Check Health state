@@ -1,0 +1,17 @@
+// owner: F-bader
+// URL: https://gist.github.com/f-bader/68a863c3001b1638bfabebbe3b4dee46
+
+//C heckDefenderAVHealthState.kusto
+// Check Defender AV related health issues
+// Microsoft Defender Antivirus is disabled - scid-2010
+// Microsoft Defender Antivirus definitions are outdated - scid-2011
+// Microsoft Defender Antivirus real-time behavior monitoring is disabled - scid-91
+// Microsoft Defender Antivirus real-time protection is disabled - scid-2012
+// Microsoft Defender Antivirus cloud service connectivity is impaired - scid-2014
+DeviceTvmSecureConfigurationAssessmentKB
+| where ConfigurationName contains "Defender"
+| join kind=innerunique DeviceTvmSecureConfigurationAssessment on ConfigurationId
+| where ConfigurationId in ("scid-2010","scid-2011","scid-2012","scid-91","scid-2014")
+| where IsApplicable == 1 and IsCompliant != 1
+| project  ConfigurationName, DeviceName, OSPlatform ,ConfigurationId,ConfigurationImpact
+| sort by ConfigurationImpact
