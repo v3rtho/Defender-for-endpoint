@@ -18,7 +18,7 @@
 .OUTPUTS
     none
 .EXAMPLE
-    .\Install.ps1
+    .\Install.ps1 -verbose -passive -OnboardingScript ".\WindowsDefenderATPOnboardingScript.CMD
 .EXAMPLE
     .\Install.ps1 -UI -NoMSILog -NoEtl
 .EXAMPLE
