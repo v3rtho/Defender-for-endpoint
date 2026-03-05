@@ -15,6 +15,10 @@ Logic:
 
 Logging:
 - Writes to a log file (default: C:\ProgramData\DefenderPrereq\DefenderPrereq_<timestamp>.log)
+
+Example:
+.\Defender_prereq.ps1 -RegistryPolAction Rename
+
 #>
 
 # ---------------------------
