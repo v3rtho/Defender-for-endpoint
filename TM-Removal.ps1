@@ -82,7 +82,7 @@ $mpStatus = Get-MPComputerStatus
 # Initialize the result message
 $resultMessage = ""
 
-$disableSelfProtect = &"C:\Program Files\Trend Micro\Deep Security Agent\dsa_control.cmd" --selfprotect 0 -p -![7NO:!3Qa. | Out-String
+$disableSelfProtect = &"C:\Program Files\Trend Micro\Deep Security Agent\dsa_control.cmd" --selfprotect 0 -p %%%%%%%%% | Out-String
 $disableSelfProtect = $disableSelfProtect.Trim()
 if ($disableSelfProtect -eq "Agent self-protection successfully disabled.") {
     write-host "$productName self-protection disabled" | Out-File -FilePath $outputFile -Append 
