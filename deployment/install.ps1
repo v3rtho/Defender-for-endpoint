@@ -1583,11 +1583,37 @@ try {
     if ($Passive.IsPresent) {
         Trace-Message "Will force passive mode."
         $argumentList += 'FORCEPASSIVEMODE=1'
+        $passiveRegPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows Advanced Threat Protection"
+        try {
+            if (-not (Test-Path -LiteralPath $passiveRegPath)) {
+                New-Item -Path $passiveRegPath -Force | Out-Null
+            }
+            New-ItemProperty -Path $passiveRegPath -Name "ForceDefenderPassiveMode" -Value 1 -PropertyType DWord -Force | Out-Null
+            Trace-Message "Set: $passiveRegPath\ForceDefenderPassiveMode = 1"
+        }
+        catch {
+            Trace-Warning "Failed to set ForceDefenderPassiveMode: $_"
+        }
     }
     
     if ($etl -and 0 -eq $etlParams.Count) {
         ## start ETW session if not already.
         $etlParams = Start-TraceSession
+    }
+
+    if ($Tag.Length) {
+        $tagRegPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows Advanced Threat Protection\DeviceTagging"
+        Trace-Message "Setting device tag: $Tag"
+        try {
+            if (-not (Test-Path -LiteralPath $tagRegPath)) {
+                New-Item -Path $tagRegPath -Force | Out-Null
+            }
+            New-ItemProperty -Path $tagRegPath -Name "GROUP" -Value $Tag -PropertyType String -Force | Out-Null
+            Trace-Message "Device tag set: GROUP = $Tag"
+        }
+        catch {
+            Trace-Warning "Failed to set device tag: $_"
+        }
     }
 
     $IsDownLevelServer = $false
@@ -1654,20 +1680,6 @@ try {
             }
         }
 
-        if ($Tag.Length) {
-            $tagRegPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows Advanced Threat Protection\DeviceTagging"
-            Trace-Message "Setting device tag: $Tag"
-            try {
-                if (-not (Test-Path -LiteralPath $tagRegPath)) {
-                    New-Item -Path $tagRegPath -Force | Out-Null
-                }
-                New-ItemProperty -Path $tagRegPath -Name "GROUP" -Value $Tag -PropertyType String -Force | Out-Null
-                Trace-Message "Device tag set: GROUP = $Tag"
-            }
-            catch {
-                Trace-Warning "Failed to set device tag: $_"
-            }
-        }
     }
 }
 catch {
