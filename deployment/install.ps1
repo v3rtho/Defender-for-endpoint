@@ -19,7 +19,7 @@
     none
 .EXAMPLE
     .\Install.ps1 -verbose -passive -OnboardingScript ".\WindowsDefenderATPOnboardingScript.CMD
-    .\install.ps1 -verbose -passive -OnboardingScript ".\WindowsDefenderATPOnboardingScript.CMD" -Tag "MDE-management"
+    .\install.ps1 -verbose -passive -OnboardingScript ".\WindowsDefenderATPOnboardingScript.CMD" -Tag "MDE-Management"
 
 .EXAMPLE
     .\Install.ps1 -UI -NoMSILog -NoEtl
