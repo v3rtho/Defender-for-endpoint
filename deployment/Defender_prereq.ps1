@@ -9,7 +9,7 @@ Logic:
 5) If they reappeared, remove OR rename registry.pol (Machine) based on user input
 6) gpupdate /force and check again
 7) Set:
-   - DisableAntiSpyware = 1
+   - (optional) DisableAntiSpyware = 1
    - ForceDefenderPassiveMode = 1
 8) Check if WinDefend service exists; if not, enable Windows-Defender feature via DISM
 
