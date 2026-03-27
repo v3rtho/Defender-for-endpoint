@@ -19,6 +19,8 @@
     none
 .EXAMPLE
     .\Install.ps1 -verbose -passive -OnboardingScript ".\WindowsDefenderATPOnboardingScript.CMD
+    .\install.ps1 -verbose -passive -OnboardingScript ".\WindowsDefenderATPOnboardingScript.CMD" -Tag "MDE-management"
+
 .EXAMPLE
     .\Install.ps1 -UI -NoMSILog -NoEtl
 .EXAMPLE
@@ -60,7 +62,10 @@ param(
     [Parameter(ParameterSetName = 'install')]
     [Parameter(ParameterSetName = 'uninstall')]
     ## Disable ETL logging
-    [switch] $NoEtl)
+    [switch] $NoEtl,
+    [Parameter(ParameterSetName = 'install')]
+    ## Optional tag to associate with this installation
+    [string] $Tag)
  
 
 function Get-CommandLine {
@@ -1639,13 +1644,28 @@ try {
                 $OnboardingScript
             }
             $argumentList = @('/c', $scriptPath)
-            
+
             $exitCode = Measure-Process -FilePath:$((Get-Command 'cmd.exe').Path) -ArgumentList:$argumentList -PassThru
             if (0 -eq $exitCode) {
                 Trace-Message "Onboarding successful."
             }
             else {
                 Trace-Warning "Onboarding script returned $exitCode"
+            }
+        }
+
+        if ($Tag.Length) {
+            $tagRegPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows Advanced Threat Protection\DeviceTagging"
+            Trace-Message "Setting device tag: $Tag"
+            try {
+                if (-not (Test-Path -LiteralPath $tagRegPath)) {
+                    New-Item -Path $tagRegPath -Force | Out-Null
+                }
+                New-ItemProperty -Path $tagRegPath -Name "GROUP" -Value $Tag -PropertyType String -Force | Out-Null
+                Trace-Message "Device tag set: GROUP = $Tag"
+            }
+            catch {
+                Trace-Warning "Failed to set device tag: $_"
             }
         }
     }
