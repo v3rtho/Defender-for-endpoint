@@ -27,7 +27,10 @@ Example:
 param(
     [Parameter(Mandatory=$true, HelpMessage="Action to take on registry.pol if policies reappear. Options: 'Delete' or 'Rename'")]
     [ValidateSet("Delete", "Rename")]
-    [string]$RegistryPolAction
+    [string]$RegistryPolAction,
+
+    [Parameter(Mandatory=$false, HelpMessage="Set DisableAntiSpyware = 1 in the Windows Defender policy registry key. Defaults to false.")]
+    [switch]$DisableAntiSpyware = $false
 )
 
 # ---------------------------
@@ -157,7 +160,7 @@ function Remove-RegValueIfExists {
     }
 }
 
-function Ensure-RegDword {
+function Set-RegDword {
     param(
         [Parameter(Mandatory)][string]$Path,
         [Parameter(Mandatory)][string]$Key,
@@ -288,11 +291,15 @@ try {
 
     Write-Log "Step 7: Setting required values." "STEP"
     # DisableAntiSpyware = 1 under Windows Defender policy path
-    Ensure-RegDword -Path "HKLM:\Software\Policies\Microsoft\Windows Defender" -Key "DisableAntiSpyware" -Value 1
-    Write-Log "Set: HKLM:\Software\Policies\Microsoft\Windows Defender\DisableAntiSpyware = 1"
+    if ($DisableAntiSpyware) {
+        Set-RegDword -Path "HKLM:\Software\Policies\Microsoft\Windows Defender" -Key "DisableAntiSpyware" -Value 1
+        Write-Log "Set: HKLM:\Software\Policies\Microsoft\Windows Defender\DisableAntiSpyware = 1"
+    } else {
+        Write-Log "Skipping DisableAntiSpyware (parameter not set)."
+    }
 
     # ForceDefenderPassiveMode = 1 (commonly under Defender policy root)
-    Ensure-RegDword -Path "HKLM:\Software\Policies\Microsoft\Windows Advanced Threat Protection\" -Key "ForceDefenderPassiveMode" -Value 1
+    Set-RegDword -Path "HKLM:\Software\Policies\Microsoft\Windows Advanced Threat Protection\" -Key "ForceDefenderPassiveMode" -Value 1
     Write-Log "Set: HKLM:\Software\Policies\Microsoft\Windows Advanced Threat Protection\ForceDefenderPassiveMode = 1"
 
     Write-Log "Step 8: Check if WinDefend service exists; if not, enable Windows-Defender feature via DISM." "STEP"
