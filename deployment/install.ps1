@@ -19,7 +19,8 @@
     none
 .EXAMPLE
     .\Install.ps1 -verbose -passive -OnboardingScript ".\WindowsDefenderATPOnboardingScript.CMD
-    .\install.ps1 -verbose -passive -OnboardingScript ".\WindowsDefenderATPOnboardingScript.CMD" -Tag "MDE-Management"
+    .\install.ps1 -verbose -passive -OnboardingScript ".\WindowsDefenderATPOnboardingScript.CMD" -Tag "MDE-management" -RemoveAntiSpyware $true
+
 
 .EXAMPLE
     .\Install.ps1 -UI -NoMSILog -NoEtl
@@ -65,7 +66,10 @@ param(
     [switch] $NoEtl,
     [Parameter(ParameterSetName = 'install')]
     ## Optional tag to associate with this installation
-    [string] $Tag)
+    [string] $Tag,
+    [Parameter(ParameterSetName = 'install')]
+    ## If set, removes DisableAntiSpyware registry key after installation if it exists and is set to 1
+    [switch] $RemoveAntiSpyware = $false)
  
 
 function Get-CommandLine {
@@ -1293,7 +1297,7 @@ try {
                 $windefendStatus = (Get-Service -Name:'WinDefend' -ErrorAction:SilentlyContinue).Status
             }
 
-            # Server 2016 - Windows Defender is shipped with OS, need to check if inbox version is updatable and latest.
+            # Server 2016 - Windows Defender is skipped with OS, need to check if inbox version is updatable and latest.
             # Expectations are that 'Windows Defender Features' are installed and up-to-date            
             if ($windefendStatus -eq 'Running') {                
                 if ($currentVersion -lt '4.10.14393.2515') {
@@ -1658,6 +1662,24 @@ try {
                         Trace-Warning "Failed to remove $itemPath"
                     }
                 }
+            }
+        }
+
+        if ($RemoveAntiSpyware) {
+            $dasPath = "HKLM:\Software\Policies\Microsoft\Windows Defender"
+            $dasKey  = "DisableAntiSpyware"
+            Trace-Message "Checking $dasPath\$dasKey after installation."
+            try {
+                $dasValue = Get-ItemProperty -Path $dasPath -Name $dasKey -ErrorAction SilentlyContinue
+                if ($null -ne $dasValue -and $dasValue.$dasKey -eq 1) {
+                    Remove-ItemProperty -Path $dasPath -Name $dasKey -Force -ErrorAction Stop
+                    Trace-Message "Removed: $dasPath\$dasKey (was 1)."
+                } else {
+                    Trace-Message "$dasKey not found or not set to 1, no action needed."
+                }
+            }
+            catch {
+                Trace-Warning "Failed to remove $dasKey : $_"
             }
         }
 
