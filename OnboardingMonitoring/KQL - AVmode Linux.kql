@@ -1,0 +1,5 @@
+DeviceTvmSecureConfigurationAssessment
+| where ConfigurationId == "scid-6090"
+| where IsApplicable == "1" 
+| extend AVMode = iif(IsCompliant == '1', 'Active' , 'Passive')
+| project DeviceId, DeviceName, AVMode, OSPlatform, IsCompliant, IsApplicable
